@@ -1,0 +1,106 @@
+**************Multi-Label Emotion Detection using Logistic Regression & One-vs-Rest Strategy***************************
+
+🧠 How It Works (Step-by-Step):
+1. Import Libraries
+Essential packages like:
+pandas, numpy – for data handling
+sklearn – for ML pipeline, model training, and evaluation
+pickle – for saving model and label data
+
+2. Load Dataset
+Loads the GoEmotions CSV.
+This dataset contains user comments labeled with 27 different emotions.
+
+3. Select Columns
+text: the input sentence.
+Emotion columns: columns 9 onward (multi-label target variables like joy, anger, sadness, etc.)
+
+4. Drop Missing Rows
+Removes any text rows with missing data.
+
+5. Prepare Inputs & Targets
+X = input text
+y = one-hot encoded emotion labels (multi-label)
+
+6. Train/Test Split
+Divides data into 80% training and 20% test sets using train_test_split.
+
+pipeline = Pipeline([
+    ('tfidf', TfidfVectorizer(max_features=10000)),
+    ('clf', LogisticRegression(max_iter=1000))
+])
+ Explanation of Pipeline:
+TfidfVectorizer: Converts text into numerical values using term frequency–inverse document frequency (TF-IDF). This helps the model understand which words are important.
+
+LogisticRegression: A binary classifier trained to distinguish between emotion vs. not-emotion. It is run separately for each label using the OneVsRest strategy.
+
+
+8. Wrap in OneVsRestClassifier
+model = OneVsRestClassifier(pipeline)
+This means:
+For each emotion (27 total), a separate classifier is trained to decide: "Is this emotion present or not?"
+
+9. Model Training
+model.fit(X_train, y_train)
+Each of the 27 classifiers gets trained in parallel on the full pipeline (TF-IDF + Logistic Regression).
+
+10. Evaluation
+y_pred = model.predict(X_test)
+print(classification_report(y_test, y_pred, target_names=emotion_cols))
+Provides precision, recall, F1-score for each emotion across the test dataset.
+
+11. Save Trained Model & Labels
+pickle.dump(model, open("emotion_model.pkl", "wb"))
+pickle.dump(list(emotion_cols), open("emotion_labels.pkl", "wb"))
+
+
+✅ Part 2: Web App Deployment (For PyCharm / Flask)
+
+emotion_app/
+├── app.py
+├── emotion_model.pkl
+├── emotion_labels.pkl
+├── templates/
+│   └── index.html
+
+
+💡 How It Works (Step-by-Step)
+1. Load Model & Labels
+model = pickle.load(open("emotion_model.pkl", "rb"))
+emotion_labels = pickle.load(open("emotion_labels.pkl", "rb"))
+
+
+2. Home Route
+@app.route('/')
+def home():
+    return render_template('index.html')
+Displays the form where the user inputs a sentence.
+
+3. Predict Route
+@app.route('/predict', methods=['POST'])
+Gets user input from the form.
+Runs model.predict_proba([text_input])
+Picks all emotions with probability > 0.10.
+If none are above threshold, chooses the top-1 emotion with "(weak confidence)".
+
+4. HTML (index.html)
+Clean, modern UI with a form.
+Text area for sentence input.
+Submit button.
+Prediction area to display detected emotions.
+
+🧪 Example
+Input:
+"I feel so anxious and overwhelmed today."
+Output:
+fear
+sadness
+nervousness (optional based on threshold)
+
+🚀 Run App
+python app.py
+Then open: http://127.0.0.1:5000 in your browser.
+
+Dependencies
+Install with:
+pip install pandas,numpy,scikit-learn,flask
